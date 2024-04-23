@@ -1,60 +1,72 @@
 import heapq
 
-class Nodo:
-    def __init__(self, estado, distancia, camino):
-        self.estado = estado
-        self.distancia = distancia
-        self.camino = camino
+class Grafo:
+    def __init__(self):
+        self.vertices = {}
 
-    # Comparación de nodos basada en la distancia
-    def __lt__(self, otro):
-        return self.distancia < otro.distancia
+    def agregar_vertice(self, vertice):
+        if vertice not in self.vertices:
+            self.vertices[vertice] = {}
 
-def dijkstra(estado_inicial, objetivo, graf):
-    nodos_frontera = []
-    heapq.heappush(nodos_frontera, Nodo(estado_inicial, 0, [estado_inicial]))
-    nodos_visitados = set()
+    def agregar_arista(self, vertice1, vertice2, peso):
+        if vertice1 in self.vertices and vertice2 in self.vertices:
+            self.vertices[vertice1][vertice2] = peso
+            self.vertices[vertice2][vertice1] = peso
 
-    while nodos_frontera:
-        nodo_actual = heapq.heappop(nodos_frontera)
+    def dijkstra(self, inicio):
+        distancias = {vertice: float('inf') for vertice in self.vertices}
+        distancias[inicio] = 0
+        visitados = set()
+        heap = [(0, inicio)]
 
-        if nodo_actual.estado == objetivo:
-            return nodo_actual.camino, nodo_actual.distancia
+        while heap:
+            (distancia, vertice_actual) = heapq.heappop(heap)
 
-        if nodo_actual.estado in nodos_visitados:
-            continue
+            if vertice_actual in visitados:
+                continue
 
-        nodos_visitados.add(nodo_actual.estado)
+            visitados.add(vertice_actual)
 
-        for hijo, distancia in graf[nodo_actual.estado].items():
-            if hijo not in nodos_visitados:
-                nueva_distancia = nodo_actual.distancia + distancia
-                nuevo_camino = nodo_actual.camino + [hijo]
-                heapq.heappush(nodos_frontera, Nodo(hijo, nueva_distancia, nuevo_camino))
+            for vecino, peso in self.vertices[vertice_actual].items():
+                distancia_nueva = distancia + peso
 
-    return None, None
+                if distancia_nueva < distancias[vecino]:
+                    distancias[vecino] = distancia_nueva
+                    heapq.heappush(heap, (distancia_nueva, vecino))
 
-# Grafo
-grafo = {
-    'EDO.MEX': {'SLP': 513, 'CDMX': 125},
-    'CDMX': {'SLP': 423, 'MICHOACAN': 491},
-    'SLP': {'MICHOACAN': 355, 'SONORA': 603, 'MONTERREY': 313, 'GUADALAJARA': 437, 'HIDALGO': 599, 'QRO': 203, 'PUEBLA': 514},
-    'MICHOACAN': {'SONORA': 346, 'MONTERREY': 296},
-    'QRO': {'HIDALGO': 390},
-    'MONTERREY': {'SONORA': 296},
-    'GUADALAJARA': {'MONTERREY': 394, 'SLP': 437},
-    'SONORA': {'MICHOACAN': 346, 'SLP': 603, 'MONTERREY': 296},
-    'HIDALGO': {'SLP': 599, 'QRO': 390},
-    'PUEBLA': {'SLP': 514}
-}
+        return distancias
 
-estado_inicial = 'CDMX'
-objetivo = 'SONORA'
+# Crear el grafo
+grafo = Grafo()
+vertices = [1, 2, 3, 4, 5, 6, 7]
 
-camino, distancia = dijkstra(estado_inicial, objetivo, grafo)
+for vertice in vertices:
+    grafo.agregar_vertice(vertice)
 
-if camino:
-    print("Camino:", camino)
-    print("Distancia:", distancia)
-else:
-    print("No se encontró un camino desde {} hasta {}.".format(estado_inicial, objetivo))
+aristas = [
+    (1, 2, 3), (1, 3, 6),
+    (2, 3, 2), (2, 4, 1),
+    (3, 4, 4), (3, 5, 2),
+    (4, 5, 6), (5, 6, 2),
+    (5, 7, 2), (6, 7, 3)
+]
+
+for arista in aristas:
+    grafo.agregar_arista(*arista)
+
+# Calcular el camino más corto desde el vertice 1 al vertice 7
+inicio = 1
+distancias = grafo.dijkstra(inicio)
+
+# Encontrar el camino
+destino = 7
+camino = [destino]
+while destino != inicio:
+    for vertice, peso in grafo.vertices[destino].items():
+        if distancias[destino] - peso == distancias[vertice]:
+            camino.append(vertice)
+            destino = vertice
+            break
+
+camino.reverse()
+print("Camino más corto desde el vertice 1 al vertice 7:", ' -> '.join(map(str, camino)))
